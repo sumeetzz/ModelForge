@@ -1,0 +1,15 @@
+replicaCount: 3
+image:
+  repository: your-dockerhub/model-forge-api
+  tag: latest
+service:
+  type: LoadBalancer
+  port: 8000
+env:
+  MLFLOW_TRACKING_URI: "http://mlflow-tracking.mlflow.svc.cluster.local:5000"
+  MODEL_STAGE: "Production"
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
