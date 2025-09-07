@@ -9,22 +9,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install mlflow  # Ensure MLflow is installed
+
+      - name: Setup MLflow local tracking
+        run: mkdir -p /tmp/mlruns
+
+      - name: Create drift reports directory (if missing)
+        run: mkdir -p data/drift_reports
+
       - name: Run Training Pipeline
         run: python main.py
         env:
-          MLFLOW_TRACKING_URI: http://mlflow:5000  # or use self-hosted
+          MLFLOW_TRACKING_URI: file:///tmp/mlruns
+
       - name: Upload Drift Report
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: drift-report
           path: data/drift_reports/
+          if-no-files-found: ignore  # ← SAFE: won't fail if empty
+
+      - name: Upload MLflow Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlflow-runs
+          path: /tmp/mlruns/
 
   deploy:
     needs: train
@@ -32,11 +51,17 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Build Docker Image
         run: |
           cd app
           docker build -t model-forge-api:$GITHUB_SHA .
-      - name: Push to DockerHub (optional)
+
+      - name: Push to DockerHub (optional — currently disabled)
+        if: false  # ← Set to `true` when DockerHub secrets are configured
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
           docker tag model-forge-api:$GITHUB_SHA your-dockerhub/model-forge-api:latest
