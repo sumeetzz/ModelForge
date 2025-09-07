@@ -1,4 +1,4 @@
-# 🚀 ModelForge — Enterprise MLOps Platform
+# 🚀 ModelForge — Enterprise MLOps Platform 
 
 > **Automate. Monitor. Deploy. Govern.**  
 > End-to-end machine learning lifecycle platform — from raw data to Kubernetes-served models with drift detection, CI/CD, and observability.
